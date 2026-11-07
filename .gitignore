@@ -1,0 +1,31 @@
+# .NET Core / C#
+bin/
+obj/
+*.user
+*.suo
+*.userprefs
+*.pidb
+*.booproj
+.vs/
+.vscode/
+
+# Build and Publish artifacts
+publish/
+Release/
+Debug/
+
+# Binários pesados baixados em runtime (evita estourar o limite de 100MB do GitHub)
+tools/
+*.zip
+*.tar.gz
+
+# Logs e diagnósticos locais
+*.log
+app_diagnostic.log
+
+# Arquivos temporários do Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+

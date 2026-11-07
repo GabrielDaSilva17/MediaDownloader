@@ -1,0 +1,635 @@
+<Window x:Class="MediaDownloader.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:MediaDownloader"
+        xmlns:vm="clr-namespace:MediaDownloader.ViewModels"
+        xmlns:conv="clr-namespace:MediaDownloader.Helpers"
+        mc:Ignorable="d"
+        Title="MediaDownloader" 
+        Width="740" Height="700"
+        ResizeMode="CanMinimize"
+        WindowStartupLocation="CenterScreen"
+        Background="#111113"
+        Foreground="#FFFFFF"
+        FontFamily="Segoe UI, Inter, Arial"
+        Loaded="Window_Loaded">
+
+    <Window.Resources>
+        <!-- Converters -->
+        <conv:BoolToVisibilityConverter x:Key="BoolToVis"/>
+        <conv:BoolToVisibilityConverter x:Key="InverseBoolToVis" Invert="True"/>
+
+        <!-- Cores Preto & Branco / Minimalista -->
+        <SolidColorBrush x:Key="WindowBg" Color="#111113"/>
+        <SolidColorBrush x:Key="CardBg" Color="#18181B"/>
+        <SolidColorBrush x:Key="CardBorder" Color="#27272A"/>
+        <SolidColorBrush x:Key="InputBg" Color="#1F1F23"/>
+        <SolidColorBrush x:Key="InputBorder" Color="#3F3F46"/>
+        <SolidColorBrush x:Key="TextPrimary" Color="#FFFFFF"/>
+        <SolidColorBrush x:Key="TextSecondary" Color="#A1A1AA"/>
+
+        <!-- Estilo de TextBox -->
+        <Style x:Key="CleanTextBox" TargetType="TextBox">
+            <Setter Property="Background" Value="{StaticResource InputBg}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+            <Setter Property="CaretBrush" Value="{StaticResource TextPrimary}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource InputBorder}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="10,8"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="6">
+                            <ScrollViewer x:Name="PART_ContentHost" Focusable="false" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Hidden"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ToggleButton para ComboBox -->
+        <ControlTemplate x:Key="CleanComboBoxToggleButton" TargetType="ToggleButton">
+            <Border x:Name="border" 
+                    Background="{TemplateBinding Background}" 
+                    BorderBrush="{TemplateBinding BorderBrush}" 
+                    BorderThickness="{TemplateBinding BorderThickness}" 
+                    CornerRadius="6">
+                <Border Width="24" HorizontalAlignment="Right">
+                    <Path Data="M 0 0 L 4 4 L 8 0 Z" Fill="#FFFFFF" 
+                          HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+            </Border>
+            <ControlTemplate.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter TargetName="border" Property="BorderBrush" Value="#71717A"/>
+                </Trigger>
+            </ControlTemplate.Triggers>
+        </ControlTemplate>
+
+        <!-- Item do ComboBox (Dark e 100% legível) -->
+        <Style x:Key="CleanComboBoxItem" TargetType="ComboBoxItem">
+            <Setter Property="Background" Value="#1E1E24"/>
+            <Setter Property="Foreground" Value="#FFFFFF"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Padding" Value="10,8"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ComboBoxItem">
+                        <Border x:Name="itemBorder" 
+                                Background="{TemplateBinding Background}" 
+                                Padding="{TemplateBinding Padding}" 
+                                CornerRadius="4" Margin="2">
+                            <ContentPresenter HorizontalAlignment="Left" VerticalAlignment="Center">
+                                <ContentPresenter.Resources>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground" Value="#FFFFFF"/>
+                                    </Style>
+                                </ContentPresenter.Resources>
+                            </ContentPresenter>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsHighlighted" Value="True">
+                                <Setter TargetName="itemBorder" Property="Background" Value="#32323C"/>
+                                <Setter Property="Foreground" Value="#FFFFFF"/>
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="itemBorder" Property="Background" Value="#3F3F4E"/>
+                                <Setter Property="Foreground" Value="#FFFFFF"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ComboBox Escuro Completo -->
+        <Style x:Key="CleanComboBox" TargetType="ComboBox">
+            <Setter Property="Background" Value="{StaticResource InputBg}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource InputBorder}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Height" Value="36"/>
+            <Setter Property="ItemContainerStyle" Value="{StaticResource CleanComboBoxItem}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ComboBox">
+                        <Grid>
+                            <ToggleButton Name="ToggleButton" 
+                                          Template="{StaticResource CleanComboBoxToggleButton}" 
+                                          Background="{TemplateBinding Background}" 
+                                          BorderBrush="{TemplateBinding BorderBrush}" 
+                                          BorderThickness="{TemplateBinding BorderThickness}" 
+                                          Focusable="False" 
+                                          IsChecked="{Binding Path=IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}" 
+                                          ClickMode="Press"/>
+                            <ContentPresenter Name="ContentSite" 
+                                              IsHitTestVisible="False" 
+                                              Content="{TemplateBinding SelectionBoxItem}" 
+                                              ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}" 
+                                              ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}" 
+                                              Margin="12,3,28,3" 
+                                              VerticalAlignment="Center" 
+                                              HorizontalAlignment="Left">
+                                <ContentPresenter.Resources>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground" Value="#FFFFFF"/>
+                                    </Style>
+                                </ContentPresenter.Resources>
+                            </ContentPresenter>
+                            <Popup Name="PART_Popup" 
+                                   Placement="Bottom" 
+                                   IsOpen="{TemplateBinding IsDropDownOpen}" 
+                                   AllowsTransparency="True" 
+                                   Focusable="False" 
+                                   PopupAnimation="Slide">
+                                <Grid Name="DropDown" 
+                                      SnapsToDevicePixels="True" 
+                                      MinWidth="{TemplateBinding ActualWidth}" 
+                                      MaxHeight="{TemplateBinding MaxDropDownHeight}">
+                                    <Border x:Name="DropDownBorder" 
+                                            Background="#1E1E24" 
+                                            BorderThickness="1" 
+                                            BorderBrush="#3F3F46" 
+                                            CornerRadius="6" 
+                                            Padding="4" 
+                                            Margin="0,4,0,0">
+                                        <ScrollViewer SnapsToDevicePixels="True">
+                                            <StackPanel IsItemsHost="True" KeyboardNavigation.DirectionalNavigation="Contained" />
+                                        </ScrollViewer>
+                                    </Border>
+                                </Grid>
+                            </Popup>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Botão Primário (Preto e Branco - Alto Contraste) -->
+        <Style x:Key="PrimaryWhiteButton" TargetType="Button">
+            <Setter Property="Background" Value="#FFFFFF"/>
+            <Setter Property="Foreground" Value="#111113"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Padding" Value="16,8"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" Background="{TemplateBinding Background}"
+                                CornerRadius="6" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#E4E4E7"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="border" Property="Background" Value="#27272A"/>
+                                <Setter Property="Foreground" Value="#71717A"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Botão Secundário Escuro -->
+        <Style x:Key="SecondaryDarkButton" TargetType="Button">
+            <Setter Property="Background" Value="#27272A"/>
+            <Setter Property="Foreground" Value="#FFFFFF"/>
+            <Setter Property="FontWeight" Value="Medium"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Padding" Value="12,6"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="#3F3F46"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="6" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#3F3F46"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="border" Property="Background" Value="#18181B"/>
+                                <Setter TargetName="border" Property="BorderBrush" Value="#27272A"/>
+                                <Setter Property="Foreground" Value="#52525B"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Botão Cancelar -->
+        <Style x:Key="DangerCancelButton" TargetType="Button">
+            <Setter Property="Background" Value="#27272A"/>
+            <Setter Property="Foreground" Value="#F87171"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Padding" Value="16,8"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="#7F1D1D"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="6" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#7F1D1D"/>
+                                <Setter Property="Foreground" Value="#FFFFFF"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="border" Property="Background" Value="#18181B"/>
+                                <Setter TargetName="border" Property="BorderBrush" Value="#27272A"/>
+                                <Setter Property="Foreground" Value="#52525B"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- RadioButton Branco -->
+        <Style x:Key="CleanRadioButton" TargetType="RadioButton">
+            <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="Medium"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Margin" Value="0,0,16,0"/>
+        </Style>
+
+        <!-- CheckBox Branco -->
+        <Style x:Key="CleanCheckBox" TargetType="CheckBox">
+            <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+
+        <!-- Card Limpo -->
+        <Style x:Key="CleanCard" TargetType="Border">
+            <Setter Property="Background" Value="{StaticResource CardBg}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource CardBorder}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Padding" Value="14"/>
+        </Style>
+    </Window.Resources>
+
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <!-- 0: Header Minimalista -->
+            <RowDefinition Height="Auto"/>
+            <!-- 1: Launcher Banner (se estiver baixando dependências) -->
+            <RowDefinition Height="Auto"/>
+            <!-- 2: Campo de URL -->
+            <RowDefinition Height="Auto"/>
+            <!-- 3: Preview da Mídia (se carregada) -->
+            <RowDefinition Height="Auto"/>
+            <!-- 4: Configurações de Download -->
+            <RowDefinition Height="Auto"/>
+            <!-- 5: Botão de Download & Progresso -->
+            <RowDefinition Height="Auto"/>
+            <!-- 6: Console de Logs Opcional (Expander) -->
+            <RowDefinition Height="*"/>
+            <!-- 7: Rodapé de Status -->
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- 0: HEADER MINIMALISTA -->
+        <Grid Grid.Row="0" Margin="0,0,0,12">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <TextBlock Text="MediaDownloader" FontSize="18" FontWeight="Bold" Foreground="{StaticResource TextPrimary}" VerticalAlignment="Center"/>
+
+            <!-- Status de dependências -->
+            <Border Grid.Column="1" Background="#18181B" BorderBrush="#27272A" BorderThickness="1" CornerRadius="12" Padding="10,4" VerticalAlignment="Center">
+                <StackPanel Orientation="Horizontal">
+                    <Ellipse Width="8" Height="8" Margin="0,0,6,0">
+                        <Ellipse.Style>
+                            <Style TargetType="Ellipse">
+                                <Setter Property="Fill" Value="#EF4444"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsDependenciesReady}" Value="True">
+                                        <Setter Property="Fill" Value="#22C55E"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Ellipse.Style>
+                    </Ellipse>
+                    <TextBlock FontSize="11" FontWeight="Medium">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Text" Value="Instalando dependências"/>
+                                <Setter Property="Foreground" Value="#EAB308"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsDependenciesReady}" Value="True">
+                                        <Setter Property="Text" Value="Pronto"/>
+                                        <Setter Property="Foreground" Value="#FFFFFF"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <!-- 1: BANNERS (LAUNCHER E ATUALIZAÇÃO) -->
+        <StackPanel Grid.Row="1" Margin="0,0,0,10">
+            <!-- Banner de Atualização Disponível -->
+            <Border Background="#18181B" BorderBrush="#F59E0B" BorderThickness="1" CornerRadius="8" 
+                    Padding="12,8" Margin="0,0,0,8"
+                    Visibility="{Binding IsUpdateAvailable, Converter={StaticResource BoolToVis}}">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="✦" Foreground="#F59E0B" FontSize="13" FontWeight="Bold" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                        <TextBlock Foreground="#FEF3C7" FontSize="12" VerticalAlignment="Center">
+                            <Run Text="Nova versão disponível: "/>
+                            <Run Text="{Binding LatestVersion, StringFormat='v{0}'}" FontWeight="Bold" Foreground="#FBBF24"/>
+                            <Run Text=" no GitHub!"/>
+                        </TextBlock>
+                    </StackPanel>
+
+                    <Button Grid.Column="1" Content="Baixar Atualização" Command="{Binding OpenReleaseUrlCommand}" 
+                            Style="{StaticResource PrimaryWhiteButton}" Height="28" Padding="12,0" Margin="10,0,6,0" FontSize="11"/>
+
+                    <Button Grid.Column="2" Content="✕" Command="{Binding DismissUpdateBannerCommand}" 
+                            Style="{StaticResource SecondaryDarkButton}" Height="28" Width="28" Padding="0" FontSize="11"
+                            ToolTip="Fechar aviso"/>
+                </Grid>
+            </Border>
+
+            <!-- Banner de Launcher (aparece se faltar yt-dlp/ffmpeg) -->
+            <Border Style="{StaticResource CleanCard}"
+                    Visibility="{Binding IsLauncherActive, Converter={StaticResource BoolToVis}}">
+                <StackPanel>
+                    <TextBlock Text="Instalando componentes essenciais..." FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource TextPrimary}" Margin="0,0,0,6"/>
+                    <ProgressBar Height="6" Minimum="0" Maximum="100" Value="{Binding LauncherProgress}" 
+                                 Foreground="#FFFFFF" Background="#27272A" BorderThickness="0" Margin="0,0,0,6"/>
+                    <TextBlock Text="{Binding LauncherStatus}" Foreground="{StaticResource TextSecondary}" FontSize="11"/>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+
+        <!-- 2: CAMPO DE URL -->
+        <Border Grid.Row="2" Style="{StaticResource CleanCard}" Margin="0,0,0,10">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <TextBlock Grid.Row="0" Text="Link do Vídeo ou Playlist:" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,6"/>
+
+                <Grid Grid.Row="1">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <TextBox Grid.Column="0" Text="{Binding Url, UpdateSourceTrigger=PropertyChanged}" 
+                             Style="{StaticResource CleanTextBox}"
+                             KeyDown="TxtUrl_KeyDown"
+                             IsEnabled="{Binding IsNotBusy}"/>
+
+                    <Button Grid.Column="1" Content="Colar" Command="{Binding PasteUrlCommand}"
+                            Style="{StaticResource SecondaryDarkButton}" Margin="6,0,0,0"
+                            IsEnabled="{Binding IsNotBusy}"/>
+
+                    <Button Grid.Column="2" Content="Buscar" Command="{Binding FetchInfoCommand}"
+                            Style="{StaticResource PrimaryWhiteButton}" Margin="6,0,0,0"
+                            IsEnabled="{Binding CanFetchInfo}"/>
+                </Grid>
+            </Grid>
+        </Border>
+
+        <!-- 3: PREVIEW DA MÍDIA (CARREGADO) -->
+        <Border Grid.Row="3" Style="{StaticResource CleanCard}" Margin="0,0,0,10"
+                Visibility="{Binding IsMediaLoaded, Converter={StaticResource BoolToVis}}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="130"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <Border Grid.Column="0" CornerRadius="6" Background="#000000" BorderBrush="#27272A" BorderThickness="1" 
+                        Height="74" Margin="0,0,12,0" ClipToBounds="True">
+                    <Image Source="{Binding ThumbnailUrl}" Stretch="UniformToFill" RenderOptions.BitmapScalingMode="HighQuality"/>
+                </Border>
+
+                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding MediaTitle}" FontSize="13" FontWeight="Bold" 
+                               Foreground="{StaticResource TextPrimary}" TextWrapping="Wrap" MaxHeight="38" Margin="0,0,0,4"/>
+
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                        <TextBlock Text="{Binding MediaUploader, StringFormat='Canal: {0}'}" FontSize="11" Foreground="{StaticResource TextSecondary}" Margin="0,0,12,0"/>
+                        <TextBlock Text="{Binding MediaDuration, StringFormat='Duração: {0}'}" FontSize="11" Foreground="{StaticResource TextSecondary}"/>
+                    </StackPanel>
+
+                    <CheckBox IsChecked="{Binding DownloadPlaylist}" Style="{StaticResource CleanCheckBox}" 
+                              Visibility="{Binding IsPlaylistDetected, Converter={StaticResource BoolToVis}}">
+                        <TextBlock Text="{Binding PlaylistCountText, StringFormat='Baixar toda a playlist ({0})'}"/>
+                    </CheckBox>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- 4: CONFIGURAÇÕES DE DOWNLOAD -->
+        <Border Grid.Row="4" Style="{StaticResource CleanCard}" Margin="0,0,0,10">
+            <StackPanel>
+                <!-- Tipo e Qualidade -->
+                <Grid Margin="0,0,0,10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="160"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="130"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Tipo -->
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="Tipo:" FontSize="11" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,4"/>
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,6,0,0">
+                            <RadioButton Content="Vídeo" IsChecked="{Binding IsVideoOnly}" Style="{StaticResource CleanRadioButton}"/>
+                            <RadioButton Content="Áudio" IsChecked="{Binding IsAudioOnly}" Style="{StaticResource CleanRadioButton}"/>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <!-- Qualidade (Vídeo) -->
+                    <StackPanel Grid.Column="1" Margin="6,0" Visibility="{Binding IsVideoOnly, Converter={StaticResource BoolToVis}}">
+                        <TextBlock Text="Qualidade de Vídeo:" FontSize="11" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,4"/>
+                        <ComboBox ItemsSource="{Binding AvailableVideoQualities}" 
+                                  SelectedItem="{Binding SelectedVideoQuality}" 
+                                  Style="{StaticResource CleanComboBox}"/>
+                    </StackPanel>
+
+                    <!-- Formato (Vídeo) -->
+                    <StackPanel Grid.Column="2" Visibility="{Binding IsVideoOnly, Converter={StaticResource BoolToVis}}">
+                        <TextBlock Text="Formato:" FontSize="11" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,4"/>
+                        <ComboBox ItemsSource="{Binding AvailableVideoFormats}" 
+                                  SelectedItem="{Binding SelectedVideoFormat}" 
+                                  Style="{StaticResource CleanComboBox}"/>
+                    </StackPanel>
+
+                    <!-- Qualidade (Áudio) -->
+                    <StackPanel Grid.Column="1" Margin="6,0" Visibility="{Binding IsAudioOnly, Converter={StaticResource BoolToVis}}">
+                        <TextBlock Text="Qualidade de Áudio:" FontSize="11" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,4"/>
+                        <ComboBox ItemsSource="{Binding AvailableAudioQualities}" 
+                                  SelectedItem="{Binding SelectedAudioQuality}" 
+                                  Style="{StaticResource CleanComboBox}"/>
+                    </StackPanel>
+
+                    <!-- Formato (Áudio) -->
+                    <StackPanel Grid.Column="2" Visibility="{Binding IsAudioOnly, Converter={StaticResource BoolToVis}}">
+                        <TextBlock Text="Formato:" FontSize="11" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,4"/>
+                        <ComboBox ItemsSource="{Binding AvailableAudioFormats}" 
+                                  SelectedItem="{Binding SelectedAudioFormat}" 
+                                  Style="{StaticResource CleanComboBox}"/>
+                    </StackPanel>
+                </Grid>
+
+                <!-- Destino -->
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock Grid.Column="0" Text="Salvar em:" FontSize="11" Foreground="{StaticResource TextSecondary}" 
+                               VerticalAlignment="Center" Margin="0,0,8,0"/>
+
+                    <TextBox Grid.Column="1" Text="{Binding DestinationFolder, UpdateSourceTrigger=PropertyChanged}" 
+                             Style="{StaticResource CleanTextBox}" VerticalAlignment="Center" Height="32"/>
+
+                    <Button Grid.Column="2" Content="Alterar" Command="{Binding BrowseFolderCommand}"
+                            Style="{StaticResource SecondaryDarkButton}" Margin="6,0,0,0" VerticalAlignment="Center"/>
+
+                    <Button Grid.Column="3" Content="Abrir" Command="{Binding OpenFolderCommand}"
+                            Style="{StaticResource SecondaryDarkButton}" Margin="6,0,0,0" VerticalAlignment="Center"/>
+                </Grid>
+            </StackPanel>
+        </Border>
+
+        <!-- 5: BOTÃO DE DOWNLOAD & PROGRESSO -->
+        <Border Grid.Row="5" Style="{StaticResource CleanCard}" Margin="0,0,0,10">
+            <StackPanel>
+                <Grid Margin="0,0,0,8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <Button Grid.Column="0" Content="BAIXAR AGORA" Command="{Binding StartDownloadCommand}"
+                            Style="{StaticResource PrimaryWhiteButton}" Height="40" FontSize="14"
+                            IsEnabled="{Binding CanStartDownload}"/>
+
+                    <Button Grid.Column="1" Content="Cancelar" Command="{Binding CancelCommand}"
+                            Style="{StaticResource DangerCancelButton}" Height="40" Margin="8,0,0,0"
+                            IsEnabled="{Binding IsBusy}"/>
+                </Grid>
+
+                <!-- Barra de Progresso e Percentual -->
+                <ProgressBar Height="6" Minimum="0" Maximum="100" Value="{Binding DownloadProgress}" 
+                             Foreground="#FFFFFF" Background="#27272A" BorderThickness="0" Margin="0,0,0,4"/>
+
+                <Grid>
+                    <TextBlock Text="{Binding DownloadDetail}" Foreground="{StaticResource TextSecondary}" FontSize="11"/>
+                    <TextBlock Text="{Binding DownloadProgress, StringFormat='{}{0:F1}%'}" HorizontalAlignment="Right" 
+                               Foreground="{StaticResource TextPrimary}" FontSize="11" FontWeight="Bold"/>
+                </Grid>
+            </StackPanel>
+        </Border>
+
+        <!-- 6: CONSOLE DE LOGS (EXPANSÍVEL / RECOLHIDO POR PADRÃO) -->
+        <Expander Grid.Row="6" Margin="0,0,0,4" IsExpanded="False">
+            <Expander.Header>
+                <TextBlock Text="Console de Logs (Opcional)" Foreground="{StaticResource TextSecondary}" FontSize="11" FontWeight="Medium"/>
+            </Expander.Header>
+
+            <Border Background="#0C0C0E" BorderBrush="#27272A" BorderThickness="1" CornerRadius="6" Margin="0,4,0,0" Padding="8">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,0,4">
+                        <Button Content="Verificar Atualizações" Command="{Binding CheckAppUpdateCommand}" Style="{StaticResource SecondaryDarkButton}" Margin="0,0,4,0" Padding="6,2"/>
+                        <Button Content="Atualizar yt-dlp" Command="{Binding UpdateYtDlpCommand}" Style="{StaticResource SecondaryDarkButton}" Margin="0,0,4,0" Padding="6,2"/>
+                        <Button Content="Copiar" Click="BtnCopyLog_Click" Style="{StaticResource SecondaryDarkButton}" Margin="0,0,4,0" Padding="6,2"/>
+                        <Button Content="Limpar" Command="{Binding ClearLogCommand}" Style="{StaticResource SecondaryDarkButton}" Padding="6,2"/>
+                    </StackPanel>
+
+                    <ScrollViewer Grid.Row="1" x:Name="LogScrollViewer" VerticalScrollBarVisibility="Auto" MaxHeight="140">
+                        <TextBox x:Name="TxtLogConsole"
+                                 Text="{Binding LogText, Mode=OneWay}" 
+                                 IsReadOnly="True" 
+                                 Background="Transparent" 
+                                 Foreground="#E4E4E7" 
+                                 BorderThickness="0" 
+                                 FontFamily="Consolas, Courier New" 
+                                 FontSize="11" 
+                                 TextWrapping="Wrap"/>
+                    </ScrollViewer>
+                </Grid>
+            </Border>
+        </Expander>
+
+        <!-- 7: STATUS BAR -->
+        <Grid Grid.Row="7" Margin="2,4,2,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <TextBlock Grid.Column="0" Text="{Binding StatusMessage}" Foreground="{StaticResource TextSecondary}" FontSize="11" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+
+            <!-- Assinatura / Link do GitHub -->
+            <TextBlock Grid.Column="1" VerticalAlignment="Center" FontSize="11" Margin="12,0">
+                <Run Text="Desenvolvido por " Foreground="#71717A"/>
+                <Hyperlink NavigateUri="https://github.com/GabrielDaSilva17" RequestNavigate="Hyperlink_RequestNavigate" 
+                           Foreground="#FFFFFF" TextDecorations="None" Cursor="Hand">
+                    <Run Text="GabrielDaSilva17" FontWeight="SemiBold"/>
+                </Hyperlink>
+            </TextBlock>
+
+            <TextBlock Grid.Column="2" Text="{Binding CurrentAppVersion, StringFormat='v{0}'}" Foreground="#52525B" FontSize="11" VerticalAlignment="Center"/>
+        </Grid>
+    </Grid>
+</Window>
